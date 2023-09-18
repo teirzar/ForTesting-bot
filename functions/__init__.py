@@ -1,1 +1,1 @@
-from functions.other_functions import get_token
+from functions.other_functions import get_token, add_log
