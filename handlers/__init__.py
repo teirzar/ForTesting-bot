@@ -1,0 +1,2 @@
+from handlers.message import register_message_handlers
+from handlers.fsm import register_fsm_handlers
