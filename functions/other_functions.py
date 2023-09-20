@@ -42,10 +42,11 @@ async def main() -> None:
 
     dp.startup.register(start_stop())
     dp.shutdown.register(start_stop(is_stop=True))
-    from handlers import register_message_handlers, register_fsm_handlers
+    from handlers import register_message_handlers, register_fsm_handlers, register_callback_handlers
 
     register_fsm_handlers(dp)
     register_message_handlers(dp)
+    register_callback_handlers(dp)
 
     try:
         await dp.start_polling(bot)
