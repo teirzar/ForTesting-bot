@@ -1,7 +1,7 @@
 from aiogram.types import Message
 from aiogram import Bot, Dispatcher, F
 from keyboadrs import kb_main_menu, kb_profile_menu, kb_select_session, kb_inline_testing
-from functions import is_new_session, create_new_session, get_question
+from functions import is_new_session, create_new_session, get_question, get_number_mode
 
 
 async def cmd_main_menu(message: Message, bot: Bot):
@@ -11,15 +11,16 @@ async def cmd_main_menu(message: Message, bot: Bot):
 
 async def cmd_mode_selection(message: Message):
     """Функция для запуска определенного режима"""
-    mode, user_id = message.text, message.from_user.id
+    name_mode, user_id = message.text, message.from_user.id
+    mode = await get_number_mode(name_mode)
     if await is_new_session(mode, user_id):
         await create_new_session(mode, user_id)
     else:
         text_msg = "У вас уже есть активная сессия, хотите продолжить?"
         return await message.answer(text_msg, reply_markup=kb_select_session(mode))
 
-    text_msg, len_answers, correct_answer = await get_question(mode, user_id)
-    await message.answer(text_msg, reply_markup=kb_inline_testing(len_answers, correct_answer))
+    text_msg, len_answers, correct_answer, current = await get_question(mode, user_id)
+    await message.answer(text_msg, reply_markup=kb_inline_testing(mode, len_answers, correct_answer, current))
 
 
 async def cmd_profile_menu(message: Message, bot: Bot):

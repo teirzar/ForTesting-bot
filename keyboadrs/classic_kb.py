@@ -25,5 +25,5 @@ def kb_profile_menu():
     kb.button(text="Главное меню")
 
     kb.adjust(1, 1)
-    return kb.as_markup(resize_keyboard=True, input_field_placeholder="")
+    return kb.as_markup(resize_keyboard=True, input_field_placeholder="Выберите желаемое")
 
