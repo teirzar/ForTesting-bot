@@ -1,4 +1,4 @@
-from config import users, sessions, questions_all, full_base
+from config import users, sessions, questions_all, full_base, names
 from random import randint
 
 
@@ -39,8 +39,10 @@ async def create_new_session(mode, user_id) -> None:
     if not await is_new_session(mode, user_id):
         sessions.update('status = 1', where=f'user_id = {user_id} and mode = "{mode}"')
 
+    name_mode = await get_name_mode(mode)
+
     is_random = True
-    match mode:
+    match name_mode:
 
         case "Режим изучения" | "Режим марафона":
             is_random, length = False, 204
@@ -64,7 +66,7 @@ async def create_new_session(mode, user_id) -> None:
 
 
 async def get_question(mode, user_id) -> tuple | str:
-    """Генерирует текст вопроса и количество ответов, а также номер верного ответа"""
+    """Генерирует текст вопроса и количество ответов, а также номер верного ответа и номер текущего вопроса"""
     res = sessions.print_table('questions', 'amount', where=f'user_id = {user_id} and mode = "{mode}" and status = 0')
 
     if not res:
@@ -84,4 +86,14 @@ async def get_question(mode, user_id) -> tuple | str:
         if "$" in answer:
             correct_answer = index
 
-    return text_msg, len_answers, correct_answer
+    return text_msg, len_answers, correct_answer, current_question
+
+
+async def get_number_mode(mode) -> int:
+    """Функция возвращает кодовое обозначение режима по названию режима"""
+    return names.print_table("number", where=f'name = "{mode}"')[0][0]
+
+
+async def get_name_mode(number) -> str:
+    """Функция возвращает название режима по его кодовому обозначению"""
+    return names.print_table("name", where=f'number = {number}')[0][0]

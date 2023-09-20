@@ -5,6 +5,7 @@ src = "db/db_bot.db"
 # подключение таблиц базы данных
 users = DBconnect("users", src)
 sessions = DBconnect("sessions", src)
+names = DBconnect("names", src)
 
 
 def base_init():
