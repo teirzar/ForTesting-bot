@@ -13,14 +13,18 @@ async def cmd_mode_selection(message: Message):
     """Функция для запуска определенного режима"""
     name_mode, user_id = message.text, message.from_user.id
     mode = await get_number_mode(name_mode)
+    is_studying = name_mode == "Режим изучения"
+
     if await is_new_session(mode, user_id):
         await create_new_session(mode, user_id)
     else:
         text_msg = "У вас уже есть активная сессия, хотите продолжить?"
         return await message.answer(text_msg, reply_markup=kb_select_session(mode))
 
-    text_msg, len_answers, correct_answer, current = await get_question(mode, user_id)
-    await message.answer(text_msg, reply_markup=kb_inline_testing(mode, len_answers, correct_answer, current))
+    text_msg, len_answers, correct_answer, question = await get_question(mode, user_id)
+
+    kb = kb_inline_testing(mode, len_answers, correct_answer, question, is_studying=is_studying)
+    await message.answer(text_msg, reply_markup=kb)
 
 
 async def cmd_profile_menu(message: Message, bot: Bot):
