@@ -73,11 +73,14 @@ async def get_question(mode, user_id) -> tuple | str:
         return "Ошибка, сессия не найдена, начните новую сессию!"
 
     questions, amount = res[0]
+    if not questions:
+        return "Вопросы закончились, начните новую сессию!"
+
     number_current_question = amount - len(questions.split())
     current_question = int(questions.split()[0])
     len_answers = len(full_base[questions_all[current_question]])
-    text_msg = f"#{current_question}\nВопрос №{number_current_question}\n" \
-               f"(Осталось вопросов: {len(questions.split())}):" \
+    text_msg = f"#{current_question}\nВопрос №{number_current_question + 1}\n" \
+               f"(Осталось вопросов: {len(questions.split()) - 1}):" \
                f"\n{questions_all[current_question].replace('@','')}\n\nВыберите один ответ:\n"
     correct_answer = None
 
@@ -97,3 +100,25 @@ async def get_number_mode(mode) -> int:
 async def get_name_mode(number) -> str:
     """Функция возвращает название режима по его кодовому обозначению"""
     return names.print_table("name", where=f'number = {number}')[0][0]
+
+
+async def set_answer(user_id, mode, question, cmd):
+    """Функция помещает ошибочный ответ в ошибки, а верный ответ удаляет из списка вопросов"""
+    current_questions = sessions.print_table('questions', where=f'user_id = {user_id} and mode = {mode} and status = 0')
+
+    current_questions = current_questions[0][0].split()
+    new_questions = " ".join([el for el in current_questions[1:]])
+
+    if cmd == "mistake":
+        current_mistakes = users.print_table('mistakes', where=f'id = {user_id}')[0][0]
+        if current_mistakes:
+            if question not in current_mistakes.split():
+                users.update(f'mistakes = "{current_mistakes} {question}"', where=f'id = {user_id}')
+        else:
+            users.update(f'mistakes = "{question}"', where=f'id = {user_id}')
+        sessions.update(f'mistakes = mistakes + 1, questions = "{new_questions}"',
+                        where=f'user_id = {user_id} and mode = {mode} and status = 0')
+        return "Ответ неверный!"
+
+    sessions.update(f'questions = "{new_questions}"', where=f'user_id = {user_id} and mode = {mode} and status = 0')
+    return "Верно!"
