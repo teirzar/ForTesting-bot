@@ -1,11 +1,12 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
-def kb_select_session(mode):
+def kb_select_session(mode, is_select=True):
     """Клавиатура для выбора сессии или для подтверждения создания новой сессии"""
     ikb = InlineKeyboardBuilder()
 
-    ikb.button(text="Продолжить решать", callback_data=f"session_continue_{mode}")
+    if is_select:
+        ikb.button(text="Продолжить решать", callback_data=f"session_continue_{mode}")
     ikb.button(text="Начать заново", callback_data=f"session_new_{mode}")
     ikb.adjust(1, 1)
 

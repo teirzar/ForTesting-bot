@@ -1,7 +1,7 @@
 from aiogram.types import CallbackQuery
 from aiogram import Bot, Dispatcher, F
-from functions import create_new_session, get_question, set_answer
-from keyboadrs import kb_inline_testing
+from functions import create_new_session, get_question, set_answer, get_stats
+from keyboadrs import kb_inline_testing, kb_select_session
 import asyncio
 
 
@@ -36,15 +36,17 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
     user_id = callback.from_user.id
     mode, value, question, cmd = callback.data.split("_")[1:]
     res = await get_question(mode, user_id)
+
     is_studying = mode == "101"
 
     if type(res) == str:
         await callback.message.edit_reply_markup(reply_markup=None)
         return await callback.answer(res, show_alert=True)
+
     text_msg, len_answers, correct_answer, current_question = res
 
     if str(question) != str(current_question):
-        await callback.answer("Ошибка сессии. Ответ на вопрос был дан!", show_alert=True)
+        await callback.answer("Ошибка сессии. Ответ на вопрос был дан или сессия была закончена!", show_alert=True)
         return await callback.message.edit_reply_markup(reply_markup=None)
 
     if cmd == "open":
@@ -59,6 +61,13 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
     await callback.message.edit_text(text=text_msg, reply_markup=None)
 
     res = await get_question(mode, user_id)
+
+    if user_answer_res.endswith("."):
+        res = "Вопросы закончились! Взгляните на статистику."
+        await bot.send_message(user_id,
+                               text=await get_stats(user_id),
+                               reply_markup=kb_select_session(mode, is_select=False))
+
     if type(res) == str:
         return await callback.answer(res, show_alert=True)
 

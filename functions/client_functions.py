@@ -102,12 +102,13 @@ async def get_name_mode(number) -> str:
     return names.print_table("name", where=f'number = {number}')[0][0]
 
 
-async def set_answer(user_id, mode, question, cmd):
+async def set_answer(user_id, mode, question, cmd) -> str:
     """Функция помещает ошибочный ответ в ошибки, а верный ответ удаляет из списка вопросов"""
     current_questions = sessions.print_table('questions', where=f'user_id = {user_id} and mode = {mode} and status = 0')
 
     current_questions = current_questions[0][0].split()
     new_questions = " ".join([el for el in current_questions[1:]])
+    change_status = "" if new_questions else ", status = 1"
 
     if cmd == "mistake":
         current_mistakes = users.print_table('mistakes', where=f'id = {user_id}')[0][0]
@@ -116,9 +117,31 @@ async def set_answer(user_id, mode, question, cmd):
                 users.update(f'mistakes = "{current_mistakes} {question}"', where=f'id = {user_id}')
         else:
             users.update(f'mistakes = "{question}"', where=f'id = {user_id}')
-        sessions.update(f'mistakes = mistakes + 1, questions = "{new_questions}"',
+        sessions.update(f'mistakes = mistakes + 1, questions = "{new_questions}"{change_status}',
                         where=f'user_id = {user_id} and mode = {mode} and status = 0')
-        return "Ответ неверный!"
+        return_text = "Ответ неверный!"
 
-    sessions.update(f'questions = "{new_questions}"', where=f'user_id = {user_id} and mode = {mode} and status = 0')
-    return "Верно!"
+    else:
+        sessions.update(f'questions = "{new_questions}"{change_status}',
+                        where=f'user_id = {user_id} and mode = {mode} and status = 0')
+        return_text = "Верно!"
+    return return_text + (" Вопросы закончились." if change_status else "")
+
+
+async def get_stats(user_id) -> str:
+    """Функция генерации текста статистики за последнюю завершенную сессию"""
+    last = sessions.print_table('amount', 'mistakes', 'questions', 'mode',
+                                where=f'user_id = {user_id} and status = 1',
+                                order_by='id DESC LIMIT 1',
+                                )
+    if not last:
+        return "Статистика недоступна, вы не закончили ни одну сессию."
+
+    amount, mistakes, questions, mode = last[0]
+    mode = await get_name_mode(mode)
+    questions = len(questions.split()) if questions else 0
+
+    return f"За последнюю сессию в режиме [{mode}] вы дали ответы на {amount - questions} вопроса(-ов) и ошиблись " \
+           f"{mistakes} раз(-а).\nИз {amount} вопроса(-ов) вам оставалось ответить на {questions} вопрос(-ов).\n" \
+           f"Процент верных ответов: {100 - round((mistakes/(amount - questions)) * 100, 2)}%.\n" \
+           f"В среднем вы ошибались {round(mistakes/(amount - questions), 2)} раз(-а) за вопрос."
