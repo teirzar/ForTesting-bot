@@ -3,6 +3,7 @@ from aiogram import Bot, Dispatcher, F
 from keyboadrs import kb_main_menu, kb_profile_menu, kb_select_session, kb_inline_testing
 from functions import is_new_session, create_new_session, get_question, get_number_mode, get_user_mistakes
 from functions import get_full_text_info, add_log
+from utils import HELP_MESSAGE
 
 
 async def cmd_main_menu(message: Message, bot: Bot):
@@ -53,6 +54,14 @@ async def cmd_mode_mistakes(message: Message, bot: Bot):
     return await message.answer(text_msg, reply_markup=kb)
 
 
+async def cmd_help_button(message: Message, bot: Bot):
+    """Функция для работы кнопки "Помощь". """
+    user_id = message.from_user.id
+    await add_log(f"[{user_id}] открыл Помощь")
+    return await bot.send_message(user_id, HELP_MESSAGE, parse_mode='html')
+
+
+
 def register_message_handlers(dp: Dispatcher):
     """Регистратор обработчиков сообщений"""
     dp.message.register(cmd_main_menu, F.text == "/menu")
@@ -66,6 +75,8 @@ def register_message_handlers(dp: Dispatcher):
 
     dp.message.register(cmd_mode_mistakes, F.text == "Работа над ошибками")
 
+    dp.message.register(cmd_main_menu, F.text == "/profile")
     dp.message.register(cmd_profile_menu, F.text == "Мой профиль")
 
+    dp.message.register(cmd_help_button, F.text == "/help")
 
