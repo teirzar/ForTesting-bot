@@ -1,7 +1,7 @@
 from aiogram.types import CallbackQuery
 from aiogram import Bot, Dispatcher, F
-from functions import create_new_session, get_question, set_answer, get_stats, end_session, failed_the_exam
-from keyboadrs import kb_inline_testing, kb_select_session, kb_main_menu
+from functions import create_new_session, get_question, set_answer, get_stats, end_session, failed_the_exam, add_log
+from keyboadrs import kb_inline_testing, kb_select_session
 
 
 async def cmd_select_session(callback: CallbackQuery, bot: Bot):
@@ -11,10 +11,12 @@ async def cmd_select_session(callback: CallbackQuery, bot: Bot):
 
     match cmd:
         case "continue":
+            log_text = f"продолжает решение mode [{mode}]"
             cb_text = "Продолжаем решение."
 
         case "new":
             await create_new_session(mode, user_id)
+            log_text = f"создал новую сессию mode [{mode}]"
             cb_text = "Новая сессия создана!"
 
     await callback.message.delete()
@@ -26,6 +28,7 @@ async def cmd_select_session(callback: CallbackQuery, bot: Bot):
     text_msg, len_answers, correct_answer, current = res
     is_studying = mode == "101"
     kb = kb_inline_testing(mode, len_answers, correct_answer, current, is_studying=is_studying)
+    await add_log(f"[{user_id}] {log_text}")
     await bot.send_message(user_id, text_msg, reply_markup=kb)
     await callback.answer(text=cb_text, show_alert=True)
 
@@ -40,7 +43,9 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
         text_msg = await get_stats(user_id)
         await callback.message.edit_reply_markup(reply_markup=None)
         if not res:
-            await bot.send_message(user_id, text_msg, reply_markup=kb_main_menu())
+            await bot.send_message(user_id, text_msg, reply_markup=kb_select_session(mode, is_select=False))
+
+        await add_log(f"[{user_id}] добровольно завершил сессию досрочно mode [{mode}]")
         return await callback.answer(text_msg if res else "Сессия успешно завершена!", show_alert=True)
 
     is_mistakes = mode == "106"
@@ -56,12 +61,13 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
 
     if str(question) != str(current_question):
         await callback.answer("Ошибка сессии. Ответ на вопрос был дан или сессия была закончена!", show_alert=True)
+        await add_log(f"[{user_id}] ошибка сессии mode [{mode}]")
         return await callback.message.edit_reply_markup(reply_markup=None)
 
     if cmd == "open":
         kb = kb_inline_testing(mode, len_answers, correct_answer, question, is_studying=True) if value == 'hide' \
             else kb_inline_testing(mode, len_answers, correct_answer, question, is_studying=True, show=True)
-
+        await add_log(f"[{user_id}] {'за' if value == 'hide' else 'от'}крыл подсказку вопроса [{question}]")
         await callback.answer()
         return await callback.message.edit_reply_markup(reply_markup=kb)
 
@@ -79,10 +85,12 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
                                    reply_markup=kb_select_session(mode, is_select=False))
 
     if type(res) == str:
+        await add_log(f"[{user_id}] успешно завершил решение [{mode}]")
         return await callback.answer(res, show_alert=True)
 
     text_msg, len_answers, correct_answer, current = res
     kb = kb_inline_testing(mode, len_answers, correct_answer, current, is_studying=is_studying)
+    log_text = f"[{user_id}] отвечает на вопросы mode [{mode}]"
 
     if is_exam:
         res = await failed_the_exam(user_id)
@@ -94,7 +102,9 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
             kb = kb_select_session(mode, is_select=False)
             await callback.answer(text=user_answer_res, show_alert=True)
             text_msg += "\n\nЭкзамен не сдан!"
+            log_text = f"[{user_id}] завалил экзамен."
 
+    await add_log(log_text)
     await bot.send_message(user_id, text_msg, reply_markup=kb)
     await callback.answer(text=user_answer_res)
 

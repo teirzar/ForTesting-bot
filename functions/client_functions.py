@@ -1,5 +1,6 @@
 from config import users, sessions, questions_all, full_base, names
 from random import randint
+from functions import add_log
 
 
 async def get_users() -> list:
@@ -76,10 +77,13 @@ async def get_question(mode, user_id, is_mistakes=False) -> tuple | str:
                                    where=f'user_id = {user_id} and mode = "{mode}" and status = 0')
 
     if not res:
+        await add_log(f"[{user_id}] ошибка сессии mode [{mode}]")
         return "Ошибка, сессия не найдена, начните новую сессию!"
 
     questions, amount = res if is_mistakes else res[0]
+
     if not questions:
+        await add_log(f"[{user_id}] ошибка вопросов mode [{mode}]")
         return "Все задания решены!" if is_mistakes else "Вопросы закончились, начните новую сессию!"
 
     number_current_question = amount - len(questions.split())
@@ -138,6 +142,7 @@ async def set_answer(user_id, mode, question, cmd, is_mistakes=False) -> str:
                             where=f'user_id = {user_id} and mode = {mode} and status = 0')
 
         return_text = "Ответ неверный!"
+        log_text = "неверный"
 
     else:
         if is_mistakes:
@@ -146,7 +151,9 @@ async def set_answer(user_id, mode, question, cmd, is_mistakes=False) -> str:
             sessions.update(f'questions = "{new_questions}"{change_status}',
                             where=f'user_id = {user_id} and mode = {mode} and status = 0')
         return_text = "Верно!"
+        log_text = "верный"
 
+    await add_log(f'[{user_id}] ответ [{log_text}] на вопрос [{question}]')
     return return_text + (" Вопросы закончились." if change_status else "")
 
 

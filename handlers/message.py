@@ -2,11 +2,12 @@ from aiogram.types import Message
 from aiogram import Bot, Dispatcher, F
 from keyboadrs import kb_main_menu, kb_profile_menu, kb_select_session, kb_inline_testing
 from functions import is_new_session, create_new_session, get_question, get_number_mode, get_user_mistakes
-from functions import get_full_text_info
+from functions import get_full_text_info, add_log
 
 
 async def cmd_main_menu(message: Message, bot: Bot):
     """Обработчик клавиатуры kb_main_menu"""
+    await add_log(f"[{message.from_user.id}] открыл Главное меню")
     await bot.send_message(message.from_user.id, f'Главное меню.', reply_markup=kb_main_menu())
 
 
@@ -17,9 +18,11 @@ async def cmd_mode_selection(message: Message):
     is_studying = name_mode == "Режим изучения"
 
     if await is_new_session(mode, user_id):
+        await add_log(f"[{user_id}] создана новая сессия mode [{mode}]")
         await create_new_session(mode, user_id)
     else:
         text_msg = "У вас уже есть активная сессия, хотите продолжить?"
+        await add_log(f"[{user_id}] открыл меню сессии mode [{mode}]")
         return await message.answer(text_msg, reply_markup=kb_select_session(mode))
 
     text_msg, len_answers, correct_answer, question = await get_question(mode, user_id)
@@ -32,6 +35,7 @@ async def cmd_profile_menu(message: Message, bot: Bot):
     """Функция для вызова клавиатуры меню профиля и генерации текста статистики пользователя"""
     user_id = message.from_user.id
     text_msg = await get_full_text_info(user_id)
+    await add_log(f"[{user_id}] открыл профиль.")
     await bot.send_message(user_id, f'Ваш профиль.\n{text_msg}', reply_markup=kb_profile_menu(), parse_mode='html')
 
 
@@ -43,7 +47,7 @@ async def cmd_mode_mistakes(message: Message, bot: Bot):
         return await bot.send_message(user_id, "Список ваших ошибок пуст.")
 
     await bot.send_message(user_id, f"У вас {len(mistakes.split())} ошибок.")
-
+    await add_log(f"[{user_id}] открыл Работу над ошибками")
     text_msg, len_answers, correct_answer, question = await get_question(106, user_id, is_mistakes=True)
     kb = kb_inline_testing(106, len_answers, correct_answer, question, is_studying=True)
     return await message.answer(text_msg, reply_markup=kb)
