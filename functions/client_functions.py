@@ -65,16 +65,22 @@ async def create_new_session(mode, user_id) -> None:
                    values=f'{user_id}, "{mode}", "{questions}", {length}, 0')
 
 
-async def get_question(mode, user_id) -> tuple | str:
+async def get_question(mode, user_id, is_mistakes=False) -> tuple | str:
     """Генерирует текст вопроса и количество ответов, а также номер верного ответа и номер текущего вопроса"""
-    res = sessions.print_table('questions', 'amount', where=f'user_id = {user_id} and mode = "{mode}" and status = 0')
+    if is_mistakes:
+        mistakes = await get_user_mistakes(user_id)
+        mistakes_count = len(mistakes.split())
+        res = (mistakes, mistakes_count)
+    else:
+        res = sessions.print_table('questions', 'amount',
+                                   where=f'user_id = {user_id} and mode = "{mode}" and status = 0')
 
     if not res:
         return "Ошибка, сессия не найдена, начните новую сессию!"
 
-    questions, amount = res[0]
+    questions, amount = res if is_mistakes else res[0]
     if not questions:
-        return "Вопросы закончились, начните новую сессию!"
+        return "Все задания решены!" if is_mistakes else "Вопросы закончились, начните новую сессию!"
 
     number_current_question = amount - len(questions.split())
     current_question = int(questions.split()[0])
@@ -145,3 +151,8 @@ async def get_stats(user_id) -> str:
            f"{mistakes} раз(-а).\nИз {amount} вопроса(-ов) вам оставалось ответить на {questions} вопрос(-ов).\n" \
            f"Процент верных ответов: {100 - round((mistakes/(amount - questions)) * 100, 2)}%.\n" \
            f"В среднем вы ошибались {round(mistakes/(amount - questions), 2)} раз(-а) за вопрос."
+
+
+async def get_user_mistakes(user_id) -> None | str:
+    """Функция возвращает текущие ошибки пользователя"""
+    return users.print_table('mistakes', where=f'id = {user_id}')[0][0]
