@@ -1,7 +1,7 @@
-from utils import DBconnect
+from utils.db import DBconnect
 
 # расположение файла с базой
-src = "../db/db_bot.db"
+src = "./db/db_bot.db"
 # подключение таблиц базы данных
 users = DBconnect("users", src)
 sessions = DBconnect("sessions", src)
@@ -10,7 +10,7 @@ names = DBconnect("names", src)
 
 def base_init():
     """Загружаем базу с вопросами и ответами, а также просто вопросы"""
-    f = open('../static/questions.txt', 'r', encoding="utf-8")
+    f = open('./static/questions.txt', 'r', encoding="utf-8")
     arr = []
     answers = dict()
     temp = ''
