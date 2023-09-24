@@ -2,6 +2,7 @@ from aiogram.types import Message
 from aiogram import Bot, Dispatcher, F
 from keyboadrs import kb_main_menu, kb_profile_menu, kb_select_session, kb_inline_testing
 from functions import is_new_session, create_new_session, get_question, get_number_mode, get_user_mistakes
+from functions import get_full_text_info
 
 
 async def cmd_main_menu(message: Message, bot: Bot):
@@ -29,7 +30,9 @@ async def cmd_mode_selection(message: Message):
 
 async def cmd_profile_menu(message: Message, bot: Bot):
     """Функция для вызова клавиатуры меню профиля и генерации текста статистики пользователя"""
-    await bot.send_message(message.from_user.id, f'Профиль.', reply_markup=kb_profile_menu())
+    user_id = message.from_user.id
+    text_msg = await get_full_text_info(user_id)
+    await bot.send_message(user_id, f'Ваш профиль.\n{text_msg}', reply_markup=kb_profile_menu(), parse_mode='html')
 
 
 async def cmd_mode_mistakes(message: Message, bot: Bot):
