@@ -1,6 +1,6 @@
 from aiogram.types import CallbackQuery
 from aiogram import Bot, Dispatcher, F
-from functions import create_new_session, get_question, set_answer, get_stats, end_session
+from functions import create_new_session, get_question, set_answer, get_stats, end_session, failed_the_exam
 from keyboadrs import kb_inline_testing, kb_select_session, kb_main_menu
 
 
@@ -45,7 +45,7 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
 
     is_mistakes = mode == "106"
     res = await get_question(mode, user_id, is_mistakes=is_mistakes)
-
+    is_exam = mode == "103"
     is_studying = mode == "101" or is_mistakes
 
     if type(res) == str:
@@ -73,9 +73,9 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
 
     if user_answer_res.endswith("."):
         res = "Вопросы закончились!" + ("" if is_mistakes else "Взгляните на статистику.")
+        res += "\n\nЭкзамен сдан" if is_exam else ''
         if not is_mistakes:
-            await bot.send_message(user_id,
-                                   text=await get_stats(user_id),
+            await bot.send_message(user_id, text=await get_stats(user_id) + ("\n\nЭкзамен сдан!" if is_exam else ''),
                                    reply_markup=kb_select_session(mode, is_select=False))
 
     if type(res) == str:
@@ -83,6 +83,18 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
 
     text_msg, len_answers, correct_answer, current = res
     kb = kb_inline_testing(mode, len_answers, correct_answer, current, is_studying=is_studying)
+
+    if is_exam:
+        res = await failed_the_exam(user_id)
+        if res:
+            user_answer_res = res if type(res) == str else "Экзамен не сдан. Вы допустили более 2-х ошибок."
+            if type(res) != str:
+                user_answer_res = "Экзамен уже завершен." if await end_session(user_id, 103) else user_answer_res
+            text_msg = await get_stats(user_id)
+            kb = kb_select_session(mode, is_select=False)
+            await callback.answer(text=user_answer_res, show_alert=True)
+            text_msg += "\n\nЭкзамен не сдан!"
+
     await bot.send_message(user_id, text_msg, reply_markup=kb)
     await callback.answer(text=user_answer_res)
 

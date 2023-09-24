@@ -213,3 +213,11 @@ async def end_session(user_id, mode) -> str | None:
         sessions.update('status = 1', where=f'user_id = {user_id} and mode = {mode} and status = 0')
         return
     return "Ошибка! У вас нет активной сессии. Завершать нечего."
+
+
+async def failed_the_exam(user_id) -> bool | str:
+    """Функция проверяет сколько ошибок допущено пользователем и допущен ли следующий вопрос"""
+    res = sessions.print_table('mistakes', where=f'user_id = {user_id} and mode = 103 and status = 0')[0]
+    if res:
+        return res[0] >= 2
+    return "Активная сессия не найдена."
