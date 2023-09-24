@@ -1,6 +1,7 @@
 from datetime import datetime
 from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
+from utils.commands import set_commands
 
 
 def get_token() -> str:
@@ -47,6 +48,8 @@ async def main() -> None:
     register_fsm_handlers(dp)
     register_message_handlers(dp)
     register_callback_handlers(dp)
+
+    await set_commands(bot)
 
     try:
         await dp.start_polling(bot)
