@@ -1,4 +1,4 @@
-from config import users, sessions, questions_all, full_base, names
+from utils import users, sessions, questions_all, full_base, names
 from random import randint
 from functions import add_log
 

@@ -4,7 +4,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from keyboadrs import kb_main_menu
 from aiogram.filters import CommandStart
-from config import users
+from utils import users
 from aiogram.types import ReplyKeyboardRemove
 
 
