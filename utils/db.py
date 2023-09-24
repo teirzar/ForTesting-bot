@@ -54,17 +54,8 @@ class DBconnect:
             c = db.cursor()
             c.execute(f"INSERT INTO {self.__name_table} {'(' + ', '.join(el for el in args) + ')' if args else ''} "
                       f"VALUES ({values});")
-        print(f"Значения [{values}] записаны в столбцы [{args}]")
-
-    def delete(self, where='') -> None:
-        with sqlite3.connect(self.__src) as db:
-            c = db.cursor()
-            c.execute(f'DELETE FROM {self.__name_table} {"WHERE " + where if where else ""}')
-        print(f"Из таблицы [{self.__name_table}] удалено [{where}]")
 
     def update(self, dbset='', where=''):
         with sqlite3.connect(self.__src) as db:
             c = db.cursor()
             c.execute(f'UPDATE {self.__name_table} SET {dbset} {"WHERE " + where if where else ""}')
-        if self.__name_table not in ("position", "cposition", "admbuilder", "orders"):
-            print(f"В талицу [{self.__name_table}] присвоены значения [{dbset}] где [{where}]")
