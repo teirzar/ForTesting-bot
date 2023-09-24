@@ -163,6 +163,9 @@ async def get_stats(user_id) -> str:
     mode = await get_name_mode(mode)
     questions = len(questions.split()) if questions else 0
 
+    if not amount - questions:
+        return f"Не было решено ни одного вопроса из {questions} вопросов. Ошибок допущено: {mistakes}"
+
     return f"За последнюю сессию в режиме [{mode}] вы дали ответы на {amount - questions} вопроса(-ов) и ошиблись " \
            f"{mistakes} раз(-а).\nИз {amount} вопроса(-ов) вам оставалось ответить на {questions} вопрос(-ов).\n" \
            f"Процент верных ответов: {round(100 - (mistakes/(amount - questions)) * 100, 2)}%.\n" \
@@ -201,3 +204,12 @@ async def get_full_text_info(user_id) -> str:
 
     text += f"<b>Статистика за последнюю сессию:</b>\n{await get_stats(user_id)}"
     return text
+
+
+async def end_session(user_id, mode) -> str | None:
+    """Функция для завершения начатой сессии пользователем"""
+    current_session = sessions.print_table(where=f'user_id = {user_id} and mode = {mode} and status = 0')
+    if current_session:
+        sessions.update('status = 1', where=f'user_id = {user_id} and mode = {mode} and status = 0')
+        return
+    return "Ошибка! У вас нет активной сессии. Завершать нечего."

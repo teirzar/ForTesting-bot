@@ -1,8 +1,7 @@
 from aiogram.types import CallbackQuery
 from aiogram import Bot, Dispatcher, F
-from functions import create_new_session, get_question, set_answer, get_stats
-from keyboadrs import kb_inline_testing, kb_select_session
-import asyncio
+from functions import create_new_session, get_question, set_answer, get_stats, end_session
+from keyboadrs import kb_inline_testing, kb_select_session, kb_main_menu
 
 
 async def cmd_select_session(callback: CallbackQuery, bot: Bot):
@@ -35,6 +34,15 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
     """Основная функция работы тестирования"""
     user_id = callback.from_user.id
     mode, value, question, cmd = callback.data.split("_")[1:]
+
+    if cmd == "end":
+        res = await end_session(user_id, mode)
+        text_msg = await get_stats(user_id)
+        await callback.message.edit_reply_markup(reply_markup=None)
+        if not res:
+            await bot.send_message(user_id, text_msg, reply_markup=kb_main_menu())
+        return await callback.answer(text_msg if res else "Сессия успешно завершена!", show_alert=True)
+
     is_mistakes = mode == "106"
     res = await get_question(mode, user_id, is_mistakes=is_mistakes)
 
