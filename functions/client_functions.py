@@ -108,29 +108,45 @@ async def get_name_mode(number) -> str:
     return names.print_table("name", where=f'number = {number}')[0][0]
 
 
-async def set_answer(user_id, mode, question, cmd) -> str:
+async def set_answer(user_id, mode, question, cmd, is_mistakes=False) -> str:
     """Функция помещает ошибочный ответ в ошибки, а верный ответ удаляет из списка вопросов"""
-    current_questions = sessions.print_table('questions', where=f'user_id = {user_id} and mode = {mode} and status = 0')
+    current_questions = await get_user_mistakes(user_id) if is_mistakes else \
+        sessions.print_table('questions', where=f'user_id = {user_id} and mode = {mode} and status = 0')
 
-    current_questions = current_questions[0][0].split()
+    current_questions = current_questions.split() if is_mistakes else current_questions[0][0].split()
     new_questions = " ".join([el for el in current_questions[1:]])
     change_status = "" if new_questions else ", status = 1"
 
     if cmd == "mistake":
-        current_mistakes = users.print_table('mistakes', where=f'id = {user_id}')[0][0]
+        current_mistakes = await get_user_mistakes(user_id)
+
         if current_mistakes:
             if question not in current_mistakes.split():
                 users.update(f'mistakes = "{current_mistakes} {question}"', where=f'id = {user_id}')
         else:
             users.update(f'mistakes = "{question}"', where=f'id = {user_id}')
-        sessions.update(f'mistakes = mistakes + 1, questions = "{new_questions}"{change_status}',
-                        where=f'user_id = {user_id} and mode = {mode} and status = 0')
+
+        if is_mistakes:
+            current_questions = await get_user_mistakes(user_id)
+            new_questions = " ".join(current_questions.split()[1:])
+            new_mistakes = f"{new_questions} {question}" if new_questions else question
+            users.update(f'mistakes = "{new_mistakes}"', where=f'id = {user_id}')
+            change_status = False
+
+        else:
+            sessions.update(f'mistakes = mistakes + 1, questions = "{new_questions}"{change_status}',
+                            where=f'user_id = {user_id} and mode = {mode} and status = 0')
+
         return_text = "Ответ неверный!"
 
     else:
-        sessions.update(f'questions = "{new_questions}"{change_status}',
-                        where=f'user_id = {user_id} and mode = {mode} and status = 0')
+        if is_mistakes:
+            users.update(f'mistakes = "{new_questions}"', where=f'id = {user_id}')
+        else:
+            sessions.update(f'questions = "{new_questions}"{change_status}',
+                            where=f'user_id = {user_id} and mode = {mode} and status = 0')
         return_text = "Верно!"
+
     return return_text + (" Вопросы закончились." if change_status else "")
 
 

@@ -35,9 +35,10 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
     """Основная функция работы тестирования"""
     user_id = callback.from_user.id
     mode, value, question, cmd = callback.data.split("_")[1:]
-    res = await get_question(mode, user_id)
+    is_mistakes = mode == "106"
+    res = await get_question(mode, user_id, is_mistakes=is_mistakes)
 
-    is_studying = mode == "101"
+    is_studying = mode == "101" or is_mistakes
 
     if type(res) == str:
         await callback.message.edit_reply_markup(reply_markup=None)
@@ -56,17 +57,18 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
         await callback.answer()
         return await callback.message.edit_reply_markup(reply_markup=kb)
 
-    user_answer_res = await set_answer(user_id, mode, question, cmd)
+    user_answer_res = await set_answer(user_id, mode, question, cmd, is_mistakes=is_mistakes)
     text_msg += f"\n\n{user_answer_res}" + (f"\nВерный ответ: {correct_answer + 1}." if is_studying else "")
     await callback.message.edit_text(text=text_msg, reply_markup=None)
 
-    res = await get_question(mode, user_id)
+    res = await get_question(mode, user_id, is_mistakes=is_mistakes)
 
     if user_answer_res.endswith("."):
-        res = "Вопросы закончились! Взгляните на статистику."
-        await bot.send_message(user_id,
-                               text=await get_stats(user_id),
-                               reply_markup=kb_select_session(mode, is_select=False))
+        res = "Вопросы закончились!" + ("" if is_mistakes else "Взгляните на статистику.")
+        if not is_mistakes:
+            await bot.send_message(user_id,
+                                   text=await get_stats(user_id),
+                                   reply_markup=kb_select_session(mode, is_select=False))
 
     if type(res) == str:
         return await callback.answer(res, show_alert=True)
