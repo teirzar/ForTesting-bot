@@ -39,6 +39,7 @@ def start_stop(is_stop=False):
 async def main() -> None:
     """Старт бота"""
     bot = Bot(token=get_token())
+    await bot.delete_webhook(drop_pending_updates=True)
     dp = Dispatcher(storage=MemoryStorage())
 
     dp.startup.register(start_stop())

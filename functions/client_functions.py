@@ -205,9 +205,10 @@ async def get_full_text_info(user_id) -> str:
     text += f"Всего решено заданий: {all_amount - all_questions}\n" \
             f"Ошибок было допущено: {all_mistakes}\n" \
             f"{all_questions} заданий не решено в активных сессиях.\n" \
-            f"В режиме работы над ошибками у Вас <b>{current_mistakes}</b> не исправленных заданий.\n" \
-            f"Ваш процент верных ответов: {round(100 - (all_mistakes/(all_amount - all_questions)) * 100, 2)}%.\n" \
-            f"В среднем вы ошибались {round(all_mistakes/(all_amount - all_questions), 2)} раз(-а) за вопрос.\n\n"
+            f"В режиме работы над ошибками у Вас <b>{current_mistakes}</b> не исправленных заданий.\n"
+    if all_amount - all_questions:
+        text += f"Ваш процент верных ответов: {round(100 - (all_mistakes/(all_amount - all_questions)) * 100, 2)}%.\n" \
+                f"В среднем вы ошибались {round(all_mistakes/(all_amount - all_questions), 2)} раз(-а) за вопрос.\n\n"
 
     text += f"<b>Статистика за последнюю сессию:</b>\n{await get_stats(user_id)}"
     return text
