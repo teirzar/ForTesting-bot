@@ -28,7 +28,7 @@ def questions_generate(length, is_random=True) -> list:
 
     lst = []
     while len(lst) != length:
-        num = randint(0, 204)
+        num = randint(0, 203)
         if str(num) in lst:
             continue
         lst.append(str(num))
