@@ -100,7 +100,7 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
     if is_exam:
         res = await failed_the_exam(user_id)
         if res:
-            user_answer_res = res if type(res) == str else "Экзамен не сдан. Вы допустили более 2-х ошибок."
+            user_answer_res = res if type(res) == str else "Экзамен не сдан. Вы допустили более 3-х ошибок."
             if type(res) != str:
                 user_answer_res = "Экзамен уже завершен." if await end_session(user_id, 103) else user_answer_res
             text_msg = await get_stats(user_id)

@@ -104,7 +104,6 @@ async def get_question(mode, user_id, is_mistakes=False, is_hide_show=None) -> t
         current_answer = full_base[questions_all[current_question]][i_shuffle]
         text_msg += f"{i+1}: {current_answer.replace('$','')}\n"
         if "$" in current_answer:
-            print(current_answer, i_shuffle, i)
             correct_answer = i
 
     return text_msg, len_answers, correct_answer, current_question
@@ -235,5 +234,5 @@ async def failed_the_exam(user_id) -> bool | str:
     """Функция проверяет сколько ошибок допущено пользователем и допущен ли следующий вопрос"""
     res = sessions.print_table('mistakes', where=f'user_id = {user_id} and mode = 103 and status = 0')[0]
     if res:
-        return res[0] >= 2
+        return res[0] >= 3
     return "Активная сессия не найдена."
