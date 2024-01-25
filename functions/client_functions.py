@@ -175,8 +175,7 @@ async def get_stats(user_id) -> str:
 
     return f"За последнюю сессию в режиме [{mode}] вы дали ответы на {amount - questions} вопроса(-ов) и ошиблись " \
            f"{mistakes} раз(-а).\nИз {amount} вопроса(-ов) вам оставалось ответить на {questions} вопрос(-ов).\n" \
-           f"Процент верных ответов: {round(100 - (mistakes/(amount - questions)) * 100, 2)}%.\n" \
-           f"В среднем вы ошибались {round(mistakes/(amount - questions), 2)} раз(-а) за вопрос."
+           f"Процент верных ответов: {round(100 - (mistakes/(amount - questions)) * 100, 2)}%.\n"
 
 
 async def get_user_mistakes(user_id) -> None | str:
@@ -189,7 +188,7 @@ async def get_full_text_info(user_id) -> str:
     name, pn = users.print_table('name', 'personnel_number', where=f'id = {user_id}')[0]
     text = f"<b>Ваше имя: {name}</b>\n<b>Ваш табельный номер: {pn}</b>\n\n"
     text += "<b>Общая статистика:</b>\n"
-    res = sessions.print_table('questions', 'amount', 'mistakes', where=f'user_id = {user_id}')
+    res = sessions.print_table('questions', 'amount', 'mistakes', 'status', where=f'user_id = {user_id}')
     current_mistakes = await get_user_mistakes(user_id)
     current_mistakes = len(current_mistakes.split()) if current_mistakes else 0
     if not res:
@@ -197,18 +196,19 @@ async def get_full_text_info(user_id) -> str:
     all_mistakes = 0
     all_amount = 0
     all_questions = 0
-    for q, a, m in res:
+    current_questions = 0
+    for q, a, m, s in res:
         all_questions += len(q.split()) if q else 0
         all_amount += a
+        current_questions += len(q.split()) if q and s == 0 else 0
         all_mistakes += m
 
     text += f"Всего решено заданий: {all_amount - all_questions}\n" \
             f"Ошибок было допущено: {all_mistakes}\n" \
-            f"{all_questions} заданий не решено в активных сессиях.\n" \
+            f"Не решено в активных сессиях: {current_questions} вопроса\n" \
             f"В режиме работы над ошибками у Вас <b>{current_mistakes}</b> не исправленных заданий.\n"
     if all_amount - all_questions:
-        text += f"Ваш процент верных ответов: {round(100 - (all_mistakes/(all_amount - all_questions)) * 100, 2)}%.\n" \
-                f"В среднем вы ошибались {round(all_mistakes/(all_amount - all_questions), 2)} раз(-а) за вопрос.\n\n"
+        text += f"Ваш процент верных ответов: {round(100 - (all_mistakes/(all_amount - all_questions)) * 100, 2)}%.\n"
 
     text += f"<b>Статистика за последнюю сессию:</b>\n{await get_stats(user_id)}"
     return text
