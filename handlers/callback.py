@@ -49,7 +49,8 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
         return await callback.answer(text_msg if res else "Сессия успешно завершена!", show_alert=True)
 
     is_mistakes = mode == "106"
-    res = await get_question(mode, user_id, is_mistakes=is_mistakes)
+    is_hide_show = value if (value.startswith("hide") or value.startswith("show")) else False
+    res = await get_question(mode, user_id, is_mistakes=is_mistakes, is_hide_show=is_hide_show)
     is_exam = mode == "103"
     is_studying = mode == "101" or is_mistakes
 
@@ -57,7 +58,10 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
         await callback.message.edit_reply_markup(reply_markup=None)
         return await callback.answer(res, show_alert=True)
 
-    text_msg, len_answers, correct_answer, current_question = res
+    if is_hide_show:
+        len_answers, correct_answer, current_question = res
+    else:
+        text_msg, len_answers, correct_answer, current_question = res
 
     if str(question) != str(current_question):
         await callback.answer("Ошибка сессии. Ответ на вопрос был дан или сессия была закончена!", show_alert=True)
@@ -65,9 +69,10 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
         return await callback.message.edit_reply_markup(reply_markup=None)
 
     if cmd == "open":
-        kb = kb_inline_testing(mode, len_answers, correct_answer, question, is_studying=True) if value == 'hide' \
+        kb = kb_inline_testing(mode, len_answers, correct_answer, question, is_studying=True) \
+            if value.startswith('hide') \
             else kb_inline_testing(mode, len_answers, correct_answer, question, is_studying=True, show=True)
-        await add_log(f"[{user_id}] {'за' if value == 'hide' else 'от'}крыл подсказку вопроса [{question}]")
+        await add_log(f"[{user_id}] {'за' if value.startswith('hide') else 'от'}крыл подсказку вопроса [{question}]")
         await callback.answer()
         return await callback.message.edit_reply_markup(reply_markup=kb)
 

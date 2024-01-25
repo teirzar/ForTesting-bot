@@ -1,5 +1,5 @@
 from utils import users, sessions, questions_all, full_base, names
-from random import randint
+from random import randint, shuffle
 from functions import add_log
 
 
@@ -66,7 +66,7 @@ async def create_new_session(mode, user_id) -> None:
                    values=f'{user_id}, "{mode}", "{questions}", {length}, 0')
 
 
-async def get_question(mode, user_id, is_mistakes=False) -> tuple | str:
+async def get_question(mode, user_id, is_mistakes=False, is_hide_show=None) -> tuple | str | int:
     """Генерирует текст вопроса и количество ответов, а также номер верного ответа и номер текущего вопроса"""
     if is_mistakes:
         mistakes = await get_user_mistakes(user_id)
@@ -94,10 +94,18 @@ async def get_question(mode, user_id, is_mistakes=False) -> tuple | str:
                f"\n{questions_all[current_question].replace('@','')}\n\nВыберите один ответ:\n"
     correct_answer = None
 
-    for index, answer in enumerate(full_base[questions_all[current_question]]):
-        text_msg += f"{index+1}: {answer.replace('$','')}\n"
-        if "$" in answer:
-            correct_answer = index
+    if is_hide_show:
+        return len_answers, int(is_hide_show.strip('hide').strip('show')), current_question
+
+    shuffle_indexes = list(range(len_answers))
+    shuffle(shuffle_indexes)
+
+    for i, i_shuffle in enumerate(shuffle_indexes):
+        current_answer = full_base[questions_all[current_question]][i_shuffle]
+        text_msg += f"{i+1}: {current_answer.replace('$','')}\n"
+        if "$" in current_answer:
+            print(current_answer, i_shuffle, i)
+            correct_answer = i
 
     return text_msg, len_answers, correct_answer, current_question
 

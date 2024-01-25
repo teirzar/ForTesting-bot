@@ -25,7 +25,7 @@ def kb_inline_testing(mode, len_answers, correct_answer, question, is_studying=F
 
     if is_studying:
         ikb.button(text=("Скрыть" if show else "Показать") + " верный ответ",
-                   callback_data=f"test_{mode}_{'hide' if show else 'show'}_{question}_open")
+                   callback_data=f"test_{mode}_{'hide' if show else 'show'}{correct_answer}_{question}_open")
 
     if str(mode) not in ("103", "106"):
         ikb.button(text="Завершить решение досрочно", callback_data=f'test_{mode}___end')
