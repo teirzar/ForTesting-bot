@@ -109,4 +109,3 @@ def register_message_handlers(dp: Dispatcher):
     dp.message.register(cmd_help_button, F.text == "/help")
 
     dp.message.register(cmd_get, F.text.startswith("/get_"))
-
