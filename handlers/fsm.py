@@ -12,11 +12,11 @@ class SetNamePN(StatesGroup):
     """Машина состояний для установки данных пользователя в базу данных"""
     name = State()
     personnel_number = State()
-    letters = "йцукенгшщзхъфывапролджэячсмитьбюёqwertyuiopasdfghjklzxcvbnm"
+    letters = "йцукенгшщзхъфывапролджэячсмитьбюёqwertyuiopasdfghjklzxcvbnm- "
 
 
 async def create_new_user(message: types.Message, state: FSMContext):
-    text = "Введите свое полное имя:"
+    text = "Введите своё имя:"
     if message.from_user.id in await get_users():
         text = "Вы уже зарегистрированы!\nИзменить данные можно в профиле."
         return await message.answer(text, reply_markup=kb_main_menu())
@@ -54,7 +54,7 @@ async def check_personnel_number(message: types.Message, state: FSMContext):
 class SetName(StatesGroup):
     """Машина состояний для смены имени пользователя"""
     name = State()
-    letters = "йцукенгшщзхъфывапролджэячсмитьбюёqwertyuiopasdfghjklzxcvbnm"
+    letters = "йцукенгшщзхъфывапролджэячсмитьбюёqwertyuiopasdfghjklzxcvbnm- "
 
 
 async def change_name(message: types.Message, state: FSMContext):

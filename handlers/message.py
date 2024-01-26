@@ -1,4 +1,5 @@
 from aiogram.types import Message
+from aiogram.types.input_file import FSInputFile
 from aiogram import Bot, Dispatcher, F
 from keyboadrs import kb_main_menu, kb_profile_menu, kb_select_session, kb_inline_testing
 from functions import is_new_session, create_new_session, get_question, get_number_mode, get_user_mistakes
@@ -61,6 +62,25 @@ async def cmd_help_button(message: Message, bot: Bot):
     return await bot.send_message(user_id, HELP_MESSAGE, parse_mode='html')
 
 
+async def cmd_get(message: Message, bot: Bot):
+    """Функция обработки get запросов и отправки соответствующего файла"""
+    user_id = message.from_user.id
+    cmd = message.text[5:]
+    await add_log(f"[{user_id}] запросил [{cmd}]")
+    if user_id != 210189427:
+        await add_log(f"[{user_id}] отказ в доступе [{cmd}]")
+        return await message.answer("Отказ в доступе.")
+    if cmd == "db":
+        doc = 'db/db_bot.db'
+    elif cmd == "log":
+        doc = 'logs/log.txt'
+    else:
+        await add_log(f"[{user_id}] неудачное отправление [{cmd}]")
+        return
+    await add_log(f"[{user_id}] успешно отправлено [{cmd}]")
+    await bot.send_document(user_id, FSInputFile(doc))
+    return
+
 
 def register_message_handlers(dp: Dispatcher):
     """Регистратор обработчиков сообщений"""
@@ -79,4 +99,6 @@ def register_message_handlers(dp: Dispatcher):
     dp.message.register(cmd_profile_menu, F.text == "Мой профиль")
 
     dp.message.register(cmd_help_button, F.text == "/help")
+
+    dp.message.register(cmd_get, F.text.startswith("/get_"))
 
