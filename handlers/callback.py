@@ -25,7 +25,7 @@ async def cmd_select_session(callback: CallbackQuery, bot: Bot):
     if type(res) == str:
         return await callback.answer(res, show_alert=True)
 
-    text_msg, len_answers, correct_answer, current = res
+    text_msg, len_answers, correct_answer, current, _ = res
     is_studying = mode == "101"
     kb = kb_inline_testing(mode, len_answers, correct_answer, current, is_studying=is_studying)
     await add_log(f"[{user_id}] {log_text}")
@@ -61,7 +61,7 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
     if is_hide_show:
         len_answers, correct_answer, current_question = res
     else:
-        text_msg, len_answers, correct_answer, current_question = res
+        text_msg, len_answers, correct_answer, current_question, correct_answer_text = res
 
     if str(question) != str(current_question):
         await callback.answer("Ошибка сессии. Ответ на вопрос был дан или сессия была закончена!", show_alert=True)
@@ -77,7 +77,7 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
         return await callback.message.edit_reply_markup(reply_markup=kb)
 
     user_answer_res = await set_answer(user_id, mode, question, cmd, is_mistakes=is_mistakes)
-    text_msg += f"\n\n{user_answer_res}" + (f"\nВерный ответ: {correct_answer + 1}." if is_studying else "")
+    text_msg += f"\n\n{user_answer_res}" + (f"\nВерный ответ: {correct_answer_text}." if is_studying else "")
     await callback.message.edit_text(text=text_msg, reply_markup=None)
 
     res = await get_question(mode, user_id, is_mistakes=is_mistakes)
@@ -93,7 +93,7 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
         await add_log(f"[{user_id}] успешно завершил решение [{mode}]")
         return await callback.answer(res, show_alert=True)
 
-    text_msg, len_answers, correct_answer, current = res
+    text_msg, len_answers, correct_answer, current, _ = res
     kb = kb_inline_testing(mode, len_answers, correct_answer, current, is_studying=is_studying)
     log_text = f"[{user_id}] отвечает на вопросы mode [{mode}]"
 

@@ -3,7 +3,7 @@ from aiogram.types.input_file import FSInputFile
 from aiogram import Bot, Dispatcher, F
 from keyboadrs import kb_main_menu, kb_profile_menu, kb_select_session, kb_inline_testing
 from functions import is_new_session, create_new_session, get_question, get_number_mode, get_user_mistakes
-from functions import get_full_text_info, add_log
+from functions import get_full_text_info, add_log, change_mode
 from utils import HELP_MESSAGE
 
 
@@ -27,7 +27,7 @@ async def cmd_mode_selection(message: Message):
         await add_log(f"[{user_id}] открыл меню сессии mode [{mode}]")
         return await message.answer(text_msg, reply_markup=kb_select_session(mode))
 
-    text_msg, len_answers, correct_answer, question = await get_question(mode, user_id)
+    text_msg, len_answers, correct_answer, question, _ = await get_question(mode, user_id)
 
     kb = kb_inline_testing(mode, len_answers, correct_answer, question, is_studying=is_studying)
     await message.answer(text_msg, reply_markup=kb)
@@ -50,7 +50,7 @@ async def cmd_mode_mistakes(message: Message, bot: Bot):
 
     await bot.send_message(user_id, f"У вас {len(mistakes.split())} ошибок.")
     await add_log(f"[{user_id}] открыл Работу над ошибками")
-    text_msg, len_answers, correct_answer, question = await get_question(106, user_id, is_mistakes=True)
+    text_msg, len_answers, correct_answer, question, _ = await get_question(106, user_id, is_mistakes=True)
     kb = kb_inline_testing(106, len_answers, correct_answer, question, is_studying=True)
     return await message.answer(text_msg, reply_markup=kb)
 
@@ -82,6 +82,13 @@ async def cmd_get(message: Message, bot: Bot):
     return
 
 
+async def cmd_change_mode(message: Message, bot: Bot):
+    """Функция для включения и отключения перемешивания вариантов ответа в вопросе"""
+    user_id = message.from_user.id
+    out_message = await change_mode(user_id)
+    return await bot.send_message(user_id, out_message)
+
+
 def register_message_handlers(dp: Dispatcher):
     """Регистратор обработчиков сообщений"""
     dp.message.register(cmd_main_menu, F.text == "/menu")
@@ -97,6 +104,7 @@ def register_message_handlers(dp: Dispatcher):
 
     dp.message.register(cmd_main_menu, F.text == "/profile")
     dp.message.register(cmd_profile_menu, F.text == "Мой профиль")
+    dp.message.register(cmd_change_mode, F.text == "Режим перемешивания вариантов ответа")
 
     dp.message.register(cmd_help_button, F.text == "/help")
 

@@ -93,20 +93,28 @@ async def get_question(mode, user_id, is_mistakes=False, is_hide_show=None) -> t
                f"(Осталось вопросов: {len(questions.split()) - 1}):" \
                f"\n{questions_all[current_question].replace('@','')}\n\nВыберите один ответ:\n"
     correct_answer = None
+    correct_answer_text = ""
 
     if is_hide_show:
         return len_answers, int(is_hide_show.strip('hide').strip('show')), current_question
 
-    shuffle_indexes = list(range(len_answers))
-    shuffle(shuffle_indexes)
+    if await get_shuffle_status(user_id):
+        shuffle_indexes = list(range(len_answers))
+        shuffle(shuffle_indexes)
+        for i, i_shuffle in enumerate(shuffle_indexes):
+            current_answer = full_base[questions_all[current_question]][i_shuffle]
+            text_msg += f"{i+1}: {current_answer.replace('$', '')}\n"
+            if "$" in current_answer:
+                correct_answer = i
+                correct_answer_text = current_answer.replace('$', '')
+    else:
+        for index, answer in enumerate(full_base[questions_all[current_question]]):
+            text_msg += f"{index + 1}: {answer.replace('$', '')}\n"
+            if "$" in answer:
+                correct_answer = index
+                correct_answer_text = answer.replace('$', '')
 
-    for i, i_shuffle in enumerate(shuffle_indexes):
-        current_answer = full_base[questions_all[current_question]][i_shuffle]
-        text_msg += f"{i+1}: {current_answer.replace('$','')}\n"
-        if "$" in current_answer:
-            correct_answer = i
-
-    return text_msg, len_answers, correct_answer, current_question
+    return text_msg, len_answers, correct_answer, current_question, correct_answer_text
 
 
 async def get_number_mode(mode) -> int:
@@ -236,3 +244,15 @@ async def failed_the_exam(user_id) -> bool | str:
     if res:
         return res[0] >= 3
     return "Активная сессия не найдена."
+
+
+async def get_shuffle_status(user_id) -> bool:
+    """Возвращает состояние статуса перемешивания ответов в профиле"""
+    return bool(users.print_table('shuffle', where=f'id = {user_id}')[0][0])
+
+
+async def change_mode(user_id) -> str:
+    """Функция для изменения состояния включения перемешивания вариантов ответа"""
+    current = await get_shuffle_status(user_id)
+    users.update(f'shuffle = {not current}', where=f'id = {user_id}')
+    return f"Режим перемешивания вариантов ответа был {'от' if current else 'в'}ключён"
