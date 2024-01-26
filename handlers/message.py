@@ -102,8 +102,9 @@ def register_message_handlers(dp: Dispatcher):
 
     dp.message.register(cmd_mode_mistakes, F.text == "Работа над ошибками")
 
-    dp.message.register(cmd_main_menu, F.text == "/profile")
+    dp.message.register(cmd_profile_menu, F.text == "/profile")
     dp.message.register(cmd_profile_menu, F.text == "Мой профиль")
+
     dp.message.register(cmd_change_mode, F.text == "Перемешивание вариантов ответа")
 
     dp.message.register(cmd_help_button, F.text == "/help")

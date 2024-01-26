@@ -220,12 +220,13 @@ async def get_full_text_info(user_id) -> str:
 
     text += f"Всего решено заданий: {all_amount - all_questions}\n" \
             f"Ошибок было допущено: {all_mistakes}\n" \
-            f"Не решено в активных сессиях: {current_questions} вопроса\n" \
+            f"Не решено в активных сессиях: {current_questions}\n" \
             f"В режиме работы над ошибками у Вас <b>{current_mistakes}</b> не исправленных заданий.\n"
     if all_amount - all_questions:
         text += f"Ваш процент верных ответов: {round(100 - (all_mistakes/(all_amount - all_questions)) * 100, 2)}%.\n"
 
     text += f"<b>Статистика за последнюю сессию:</b>\n{await get_stats(user_id)}"
+    text += f"\n\nРежим перемешивания вариантов ответа [{'в' if await get_shuffle_status(user_id) else 'от'}ключён]"
     return text
 
 
