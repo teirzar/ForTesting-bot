@@ -1,4 +1,4 @@
-from aiogram import types, Dispatcher, F
+from aiogram import types, Dispatcher, F, Bot
 from functions import add_log, register, get_users, get_full_text_info
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
@@ -6,6 +6,7 @@ from keyboadrs import kb_main_menu
 from aiogram.filters import CommandStart
 from utils import users
 from aiogram.types import ReplyKeyboardRemove
+from aiogram.exceptions import TelegramForbiddenError
 
 
 class SetNamePN(StatesGroup):
@@ -100,6 +101,35 @@ async def check_change_personnel_number(message: types.Message, state: FSMContex
     await state.clear()
 
 
+class AdminMessage(StatesGroup):
+    """Машина состояний для отправки сообщения юзерам"""
+    admin_message = State()
+
+
+async def create_admin_message(message: types.Message, state: FSMContext, bot: Bot):
+    """Функция для отправки сообщения пользователям бота"""
+    if message.from_user.id != 210189427:
+        await add_log(f"[{message.from_user.id}] использует команду отправки сообщения.")
+        await bot.send_message(210189427, text=f"{message.from_user.id} хочет юзануть отправку сообщения!!")
+        await message.answer("Команда недоступна.", reply_markup=kb_main_menu())
+        return await state.clear()
+    await message.answer("Введите сообщение пользователям:", reply_markup=ReplyKeyboardRemove())
+    await state.set_state(AdminMessage.admin_message)
+
+
+async def send_admin_message(message: types.Message, state: FSMContext, bot: Bot):
+    await state.update_data(admin_message=message.text)
+    counter = 0
+    for user in await get_users():
+        try:
+            await bot.send_message(user, text=message.text, reply_markup=kb_main_menu())
+        except TelegramForbiddenError:
+            counter += 1
+    await message.answer(f"Сообщение: [{message.text}] отправлено пользователям! Сообщение не дошло {counter} юзерам.",
+                         reply_markup=kb_main_menu())
+    await state.clear()
+
+
 def register_fsm_handlers(dp: Dispatcher):
     """Регистратор обработчиков машины состояний"""
     dp.message.register(create_new_user, CommandStart())
@@ -111,3 +141,6 @@ def register_fsm_handlers(dp: Dispatcher):
 
     dp.message.register(change_personnel_number, F.text == "Изменить табельный номер")
     dp.message.register(check_change_personnel_number, SetPN.personnel_number)
+
+    dp.message.register(create_admin_message, F.text == "/send_message")
+    dp.message.register(send_admin_message, AdminMessage.admin_message)
