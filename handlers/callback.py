@@ -2,6 +2,7 @@ from aiogram.types import CallbackQuery
 from aiogram import Bot, Dispatcher, F
 from functions import create_new_session, get_question, set_answer, get_stats, end_session, failed_the_exam, add_log
 from keyboadrs import kb_inline_testing, kb_select_session
+from aiogram.exceptions import TelegramRetryAfter
 
 
 async def cmd_select_session(callback: CallbackQuery, bot: Bot):
@@ -29,8 +30,12 @@ async def cmd_select_session(callback: CallbackQuery, bot: Bot):
     is_studying = mode == "101"
     kb = kb_inline_testing(mode, len_answers, correct_answer, current, is_studying=is_studying)
     await add_log(f"[{user_id}] {log_text}")
-    await bot.send_message(user_id, text_msg, reply_markup=kb)
-    await callback.answer(text=cb_text, show_alert=True)
+    try:
+        await bot.send_message(user_id, text_msg, reply_markup=kb)
+    except TelegramRetryAfter:
+        await callback.answer(text="Сработал АНТИФЛУД! Подождите 5 минут и продолжайте решение.", show_alert=True)
+    else:
+        await callback.answer(text=cb_text, show_alert=True)
 
 
 async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
@@ -78,7 +83,11 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
 
     user_answer_res = await set_answer(user_id, mode, question, cmd, is_mistakes=is_mistakes)
     text_msg += f"\n\n{user_answer_res}" + (f"\nВерный ответ: {correct_answer_text}." if is_studying else "")
-    await callback.message.edit_text(text=text_msg, reply_markup=None)
+    try:
+        await callback.message.edit_text(text=text_msg, reply_markup=None)
+    except TelegramRetryAfter:
+        await callback.answer(text="Сработал АНТИФЛУД! Подождите 5 минут и продолжайте решение.", show_alert=True)
+
 
     res = await get_question(mode, user_id, is_mistakes=is_mistakes)
 
@@ -110,8 +119,13 @@ async def cmd_inline_testing(callback: CallbackQuery, bot: Bot):
             log_text = f"[{user_id}] завалил экзамен."
 
     await add_log(log_text)
-    await bot.send_message(user_id, text_msg, reply_markup=kb)
-    await callback.answer(text=user_answer_res)
+    try:
+        await bot.send_message(user_id, text_msg, reply_markup=kb)
+    except TelegramRetryAfter:
+        await callback.answer(text="Сработал АНТИФЛУД! Подождите 5 минут и продолжайте решение.", show_alert=True)
+    else:
+        await callback.answer(text=user_answer_res)
+
 
 
 def register_callback_handlers(dp: Dispatcher):
