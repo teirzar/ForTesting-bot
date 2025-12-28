@@ -3,7 +3,7 @@ from aiogram.types.input_file import FSInputFile
 from aiogram import Bot, Dispatcher, F
 from keyboadrs import kb_main_menu, kb_profile_menu, kb_select_session, kb_inline_testing
 from functions import is_new_session, create_new_session, get_question, get_number_mode, get_user_mistakes
-from functions import get_full_text_info, add_log, change_mode
+from functions import get_full_text_info, add_log, change_mode, change_questions_base
 from utils import HELP_MESSAGE
 
 
@@ -89,6 +89,13 @@ async def cmd_change_mode(message: Message, bot: Bot):
     return await bot.send_message(user_id, out_message)
 
 
+async def cmd_change_base_mode(message: Message, bot: Bot):
+    """Функция для включения и отключения перемешивания вариантов ответа в вопросе"""
+    user_id = message.from_user.id
+    out_message = await change_questions_base(user_id)
+    return await bot.send_message(user_id, out_message)
+
+
 def register_message_handlers(dp: Dispatcher):
     """Регистратор обработчиков сообщений"""
     dp.message.register(cmd_main_menu, F.text == "/menu")
@@ -106,6 +113,8 @@ def register_message_handlers(dp: Dispatcher):
     dp.message.register(cmd_profile_menu, F.text == "Мой профиль")
 
     dp.message.register(cmd_change_mode, F.text == "Перемешивание вариантов ответа")
+
+    dp.message.register(cmd_change_base_mode, F.text == "Изменить базу данных вопросов")
 
     dp.message.register(cmd_help_button, F.text == "/help")
 

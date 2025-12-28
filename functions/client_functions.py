@@ -1,4 +1,4 @@
-from utils import users, sessions, questions_all, full_base, names
+from utils import users, sessions, questions_all, new_questions, full_base, names
 from random import randint, shuffle
 from functions import add_log
 
@@ -21,14 +21,16 @@ async def is_new_session(mode, user_id) -> bool:
     return not bool(sessions.print_table('questions', where=f'mode = "{mode}" and user_id = {user_id} and status = 0'))
 
 
-def questions_generate(length, is_random=True) -> list:
+def questions_generate(length, user_id, is_random=True) -> list:
     """Функция генерации порядка вопросов"""
     if not is_random:
         return [str(i) for i in range(length)]
 
+    quests, len_questions = get_questions_base(user_id)
+
     lst = []
     while len(lst) != length:
-        num = randint(0, 203)
+        num = randint(0, len_questions)
         if str(num) in lst:
             continue
         lst.append(str(num))
@@ -42,11 +44,13 @@ async def create_new_session(mode, user_id) -> None:
 
     name_mode = await get_name_mode(mode)
 
+    quests, len_questions = get_questions_base(user_id)
+
     is_random = True
     match name_mode:
 
         case "Режим изучения" | "Режим марафона":
-            is_random, length = False, 203
+            is_random, length = False, len_questions
 
         case "Обычный режим":
             length = 20
@@ -55,12 +59,12 @@ async def create_new_session(mode, user_id) -> None:
             length = 10
 
         case "Случайный режим":
-            length = 203
+            length = len_questions
 
         case "Работа над ошибками":
             length = 1
 
-    questions = " ".join(questions_generate(length, is_random=is_random)).strip()
+    questions = " ".join(questions_generate(length, user_id, is_random=is_random)).strip()
 
     sessions.write('user_id', 'mode', 'questions', 'amount', 'status',
                    values=f'{user_id}, "{mode}", "{questions}", {length}, 0')
@@ -68,6 +72,9 @@ async def create_new_session(mode, user_id) -> None:
 
 async def get_question(mode, user_id, is_mistakes=False, is_hide_show=None) -> tuple | str | int:
     """Генерирует текст вопроса и количество ответов, а также номер верного ответа и номер текущего вопроса"""
+
+    quests, len_questions = get_questions_base(user_id)
+
     if is_mistakes:
         mistakes = await get_user_mistakes(user_id)
         mistakes_count = len(mistakes.split())
@@ -88,10 +95,10 @@ async def get_question(mode, user_id, is_mistakes=False, is_hide_show=None) -> t
 
     number_current_question = amount - len(questions.split())
     current_question = int(questions.split()[0])
-    len_answers = len(full_base[questions_all[current_question]])
+    len_answers = len(full_base[quests[current_question]])
     text_msg = f"#{current_question}\nВопрос №{number_current_question + 1}\n" \
                f"(Осталось вопросов: {len(questions.split()) - 1}):" \
-               f"\n{questions_all[current_question].replace('@','')}\n\nВыберите один ответ:\n"
+               f"\n{quests[current_question].replace('@','')}\n\nВыберите один ответ:\n"
     correct_answer = None
     correct_answer_text = ""
 
@@ -102,13 +109,13 @@ async def get_question(mode, user_id, is_mistakes=False, is_hide_show=None) -> t
         shuffle_indexes = list(range(len_answers))
         shuffle(shuffle_indexes)
         for i, i_shuffle in enumerate(shuffle_indexes):
-            current_answer = full_base[questions_all[current_question]][i_shuffle]
+            current_answer = full_base[quests[current_question]][i_shuffle]
             text_msg += f"{i+1}: {current_answer.replace('$', '')}\n"
             if "$" in current_answer:
                 correct_answer = i
                 correct_answer_text = current_answer.replace('$', '')
     else:
-        for index, answer in enumerate(full_base[questions_all[current_question]]):
+        for index, answer in enumerate(full_base[quests[current_question]]):
             text_msg += f"{index + 1}: {answer.replace('$', '')}\n"
             if "$" in answer:
                 correct_answer = index
@@ -257,3 +264,20 @@ async def change_mode(user_id) -> str:
     current = await get_shuffle_status(user_id)
     users.update(f'shuffle = {not current}', where=f'id = {user_id}')
     return f"Режим перемешивания вариантов ответа был {'от' if current else 'в'}ключён"
+
+
+def get_questions_base(user_id) -> list:
+    """Возвращает базу данных вопросов и текущую длину вопросника определенного пользователя"""
+    quests = new_questions if users.print_table('new_questions', where=f'id = {user_id}')[0][0] else questions_all
+    len_questions = len(quests) if len(quests) < 100 else len(quests) - 1
+    return quests, len_questions
+
+
+async def change_questions_base(user_id) -> str:
+    """Меняет выбранную базу вопросов"""
+    cur_base = users.print_table('new_questions', where=f'id = {user_id}')[0][0]
+    users.update(f'new_questions = {int(not cur_base)}, mistakes = ""', where=f'id = {user_id}')
+    sessions.update('status = 1', where=f'user_id = {user_id}')
+    return f"База данных была изменена! Текущая база: [{['Новая база, 35 вопросов','Полная база вопросов'][cur_base]}]"\
+           f"\nТекущие ошибки в старой базе данных были сброшены. Работа над ошибками будет доступна после появления " \
+           f"новых ошибок.\nВсе прочие не завершенные сессии были завершены."

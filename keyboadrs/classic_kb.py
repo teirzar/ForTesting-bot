@@ -23,6 +23,7 @@ def kb_profile_menu():
     kb.button(text="Изменить имя")
     kb.button(text="Изменить табельный номер")
     kb.button(text="Перемешивание вариантов ответа")
+    kb.button(text="Изменить базу данных вопросов")
     kb.button(text="Главное меню")
 
     kb.adjust(1, 1)
