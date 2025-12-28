@@ -29,6 +29,11 @@ def base_init():
     return arr[0:len(arr) - 1], answers
 
 
+new_questions = [] # Новая база вопросов
+with open('./static/new_questions.txt', 'r', encoding='utf-8') as f:
+    for st in f:
+        new_questions.append(f"@{st.strip()}\n")
+
 questions_all, full_base = base_init()  # инициализируем базу вопросов и ответов
 
 
