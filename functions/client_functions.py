@@ -156,7 +156,7 @@ async def set_answer(user_id, mode, question, cmd, is_mistakes=False) -> str:
             sessions.update(f'mistakes = mistakes + 1, questions = "{new_questions}"{change_status}',
                             where=f'user_id = {user_id} and mode = {mode} and status = 0')
 
-        return_text = "Ответ неверный!"
+        return_text = "❌ Ответ неверный!"
         log_text = "неверный"
 
     else:
@@ -165,7 +165,7 @@ async def set_answer(user_id, mode, question, cmd, is_mistakes=False) -> str:
         else:
             sessions.update(f'questions = "{new_questions}"{change_status}',
                             where=f'user_id = {user_id} and mode = {mode} and status = 0')
-        return_text = "Верно!"
+        return_text = "✅ Верно!"
         log_text = "верный"
 
     await add_log(f'[{user_id}] ответ [{log_text}] на вопрос [{question}]')
