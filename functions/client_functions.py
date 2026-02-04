@@ -30,7 +30,7 @@ def questions_generate(length, user_id, is_random=True) -> list:
 
     lst = []
     while len(lst) != length:
-        num = randint(0, len_questions)
+        num = randint(0, len_questions - 1)
         if str(num) in lst:
             continue
         lst.append(str(num))
